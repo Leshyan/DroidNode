@@ -70,7 +70,7 @@ Default service endpoint: `http://<device-ip>:17171`
 | `/v1/system/info` | `GET` | Get device hardware and Android version info |
 | `/v1/control/click` | `POST` | Tap, payload: `{"x": int, "y": int}` |
 | `/v1/control/swipe` | `POST` | Swipe, payload: `{"startX": int, "startY": int, "endX": int, "endY": int, "durationMs": int}` |
-| `/v1/control/input` | `POST` | Text input, payload: `{"text": "...", "pressEnter": bool, "enterAction": "auto|search|send|done|go|next|enter|none"}` |
+| `/v1/control/input` | `POST` | Text input, payload: `{"text": "...", "pressEnter": bool, "enterAction": "auto/search/send/done/go/next/enter/none"}` |
 | `/v1/ui/xml` | `POST` | Get current page UI hierarchy (XML) |
 | `/v1/ui/screenshot` | `POST` | Get screenshot (Base64) |
 

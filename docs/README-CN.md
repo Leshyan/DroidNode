@@ -70,7 +70,7 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 | `/v1/system/info` | `GET` | 获取设备硬件与系统版本信息 |
 | `/v1/control/click` | `POST` | 模拟点击，参数：`{"x": int, "y": int}` |
 | `/v1/control/swipe` | `POST` | 模拟滑动，参数：`{"startX": int, "startY": int, "endX": int, "endY": int, "durationMs": int}` |
-| `/v1/control/input` | `POST` | 文本输入，参数：`{"text": "...", "pressEnter": bool, "enterAction": "auto|search|send|done|go|next|enter|none"}` |
+| `/v1/control/input` | `POST` | 文本输入，参数：`{"text": "...", "pressEnter": bool, "enterAction": "auto/search/send/done/go/next/enter/none"}` |
 | `/v1/ui/xml` | `POST` | 获取当前页面的 UI 层次结构 (XML) |
 | `/v1/ui/screenshot` | `POST` | 获取屏幕截图 (Base64) |
 
