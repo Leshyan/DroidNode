@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">ACTL MVP</string>
+    <string name="startup_mode_pair">Pair via notification</string>
+    <string name="startup_mode_direct">Direct connect</string>
+    <string name="actl_ime_name">ACTL Input</string>
+    <string name="actl_ime_subtype_label">ACTL Remote Input</string>
+</resources>

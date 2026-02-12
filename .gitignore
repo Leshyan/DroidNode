@@ -1,0 +1,45 @@
+# OS / Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.iml
+
+# Gradle / Android local state
+.gradle/
+.gradle-local/
+.android-sdk/
+**/build/
+app/.cxx/
+.cxx/
+local.properties
+
+# Python cache / virtual env
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+tools/.venv/
+
+# Local runtime artifacts & archives
+archives/
+tools/agent_captures/
+actl_screenshot_*.png
+ui.xml
+tools/test.py
+tools/prepare_logo.py
+demo/
+
+# Local configs / secrets
+.env
+.env.*
+tools/actl_agent_config.json
+
+# Binary artifacts
+*.apk
+*.aab
+*.ap_
+
+# Logs / temp
+*.log
+*.tmp

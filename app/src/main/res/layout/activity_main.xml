@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Wireless debugging startup"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/textPairingEndpoint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Pairing endpoint: not found" />
+
+        <TextView
+            android:id="@+id/textConnectEndpoint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Connect endpoint: not found" />
+
+        <RadioGroup
+            android:id="@+id/radioGroupStartupMode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp">
+
+            <RadioButton
+                android:id="@+id/radioPair"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="@string/startup_mode_pair" />
+
+            <RadioButton
+                android:id="@+id/radioDirect"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/startup_mode_direct" />
+        </RadioGroup>
+
+        <TextView
+            android:id="@+id/textPairHint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Pair mode uses notification action: input code in shade and execute pairing there." />
+
+        <EditText
+            android:id="@+id/editHost"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:hint="Manual host override for direct connect (optional)"
+            android:inputType="textUri" />
+
+        <EditText
+            android:id="@+id/editPort"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:hint="Manual direct connect port override (optional)"
+            android:inputType="number" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/buttonDiscover"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Discover mDNS" />
+
+            <Button
+                android:id="@+id/buttonExecuteStartup"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:text="Run startup" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="API skeleton server"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/buttonStartApi"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Start API" />
+
+            <Button
+                android:id="@+id/buttonStopApi"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:text="Stop API" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/textLogs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Logs will appear here"
+            android:textIsSelectable="true"
+            android:textSize="12sp" />
+
+    </LinearLayout>
+</ScrollView>

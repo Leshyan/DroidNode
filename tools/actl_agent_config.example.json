@@ -1,0 +1,38 @@
+{
+  "actl": {
+    "base_url": "http://<device-ip>:17171",
+    "timeout_sec": 20
+  },
+  "llm": {
+    "base_url": "https://<your-llm-endpoint>/v1/chat/completions",
+    "api_key": "<YOUR_LLM_API_KEY>",
+    "model": "<YOUR_LLM_MODEL>",
+    "temperature": 0.2,
+    "max_tokens": 4096,
+    "timeout_sec": 60
+  },
+  "vlm": {
+    "base_url": "https://<your-vlm-endpoint>/v1/chat/completions",
+    "api_key": "<YOUR_VLM_API_KEY>",
+    "model": "<YOUR_VLM_MODEL>",
+    "temperature": 0.2,
+    "max_tokens": 4096,
+    "timeout_sec": 60
+  },
+  "agent": {
+    "xml_max_chars": 28000,
+    "save_debug_screenshot": true,
+    "wait_after_tap_sec": 0.35,
+    "tap_retry_on_no_change": 2,
+    "invalid_action_retry": 1,
+    "screenshot_grid_px": 0,
+    "min_tap_drift_px": 50,
+    "capture_dir": "tools/agent_captures",
+    "post_state_check": true,
+    "focus_radius_px": 200,
+    "focus_expand_step_px": 50,
+    "focus_max_radius_px": 300,
+    "focus_grid_px": 10,
+    "screenshot_ahash_threshold": 6
+  }
+}
