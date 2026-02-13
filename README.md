@@ -94,6 +94,18 @@ Default service endpoint: `http://<device-ip>:17171`
 
 ---
 
+## 🖼 UI Preview
+
+The screenshots below are captured from a real running build.
+They show the current MVP UI, including the main control page and the debug page (mDNS discovery, API port configuration, and logs).
+
+<p align="center">
+  <img src="./docs/assets/main.jpg" alt="DroidNode Main Page" width="300" />
+  <img src="./docs/assets/debug.jpg" alt="DroidNode Debug Page" width="300" />
+</p>
+
+---
+
 ## 🤝 Roadmap
 
 * [ ] Standardized design

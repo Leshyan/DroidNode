@@ -31,6 +31,10 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".DebugActivity"
+            android:exported="false" />
+
         <service
             android:name=".startup.service.ApiServerForegroundService"
             android:exported="false"
