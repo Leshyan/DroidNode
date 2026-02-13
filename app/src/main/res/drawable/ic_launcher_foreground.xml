@@ -1,18 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item>
-        <shape android:shape="oval">
-            <solid android:color="#1E90FF" />
-        </shape>
-    </item>
-    <item android:insetLeft="26dp" android:insetTop="26dp" android:insetRight="26dp" android:insetBottom="26dp">
-        <shape android:shape="oval">
-            <solid android:color="#FFFFFF" />
-        </shape>
-    </item>
-    <item android:insetLeft="40dp" android:insetTop="40dp" android:insetRight="40dp" android:insetBottom="40dp">
-        <shape android:shape="oval">
-            <solid android:color="#0B1A2A" />
-        </shape>
-    </item>
-</layer-list>
+<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
+    android:src="@drawable/droidnode_icon_fg"
+    android:gravity="center" />

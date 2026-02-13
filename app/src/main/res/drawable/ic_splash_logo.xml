@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:gravity="center"
+        android:width="108dp"
+        android:height="108dp">
+        <shape android:shape="oval">
+            <solid android:color="@android:color/white" />
+        </shape>
+    </item>
+
+    <item
+        android:gravity="center"
+        android:width="76dp"
+        android:height="76dp">
+        <bitmap
+            android:src="@drawable/droidnode_icon_fg"
+            android:gravity="center" />
+    </item>
+</layer-list>
