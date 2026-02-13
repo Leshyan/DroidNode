@@ -41,7 +41,9 @@ jobs:
       - name: Install Android SDK components
         shell: bash
         run: |
-          yes | sdkmanager --licenses >/dev/null
+          # With bash -o pipefail, `yes` may exit with SIGPIPE (141) after sdkmanager
+          # finishes reading input; treat that as expected while still failing on real sdkmanager errors.
+          (yes || true) | sdkmanager --licenses >/dev/null
           sdkmanager \
             "platform-tools" \
             "platforms;android-35" \
