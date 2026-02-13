@@ -128,15 +128,15 @@ class PairingForegroundService : Service() {
             return
         }
 
-        updateStatus("Pairing ${pair.host}:${pair.port}")
-        val pairResult = directAdbManager.pair(pair.host, pair.port, pairCode)
+        updateStatus("Pairing $LOOPBACK_HOST:${pair.port} (discovered ${pair.host}:${pair.port})")
+        val pairResult = directAdbManager.pair(LOOPBACK_HOST, pair.port, pairCode)
         if (!pairResult.success) {
             updateStatus("Pair failed: ${pairResult.message}")
             return
         }
 
-        updateStatus("Connecting ${connect.host}:${connect.port}")
-        val connectResult = directAdbManager.connect(connect.host, connect.port, keepAlive = true)
+        updateStatus("Connecting $LOOPBACK_HOST:${connect.port} (discovered ${connect.host}:${connect.port})")
+        val connectResult = directAdbManager.connect(LOOPBACK_HOST, connect.port, keepAlive = true)
         if (!connectResult.success) {
             updateStatus("Connect failed: ${connectResult.message}")
             return
@@ -236,6 +236,7 @@ class PairingForegroundService : Service() {
     }
 
     companion object {
+        private const val LOOPBACK_HOST = "127.0.0.1"
         private const val CHANNEL_ID = "actl_pairing"
         private const val NOTIFICATION_ID = 7101
         private const val KEY_PAIR_CODE = "pair_code"

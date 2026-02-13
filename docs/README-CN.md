@@ -72,9 +72,31 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 | `/v1/control/swipe` | `POST` | 模拟滑动，参数：`{"startX": int, "startY": int, "endX": int, "endY": int, "durationMs": int}` |
 | `/v1/control/input` | `POST` | 文本输入，参数：`{"text": "...", "pressEnter": bool, "enterAction": "auto/search/send/done/go/next/enter/none"}` |
 | `/v1/ui/xml` | `POST` | 获取当前页面的 UI 层次结构 (XML) |
-| `/v1/ui/screenshot` | `POST` | 获取屏幕截图 (Base64) |
+| `/v1/ui/screenshot` | `POST` | 获取屏幕截图 (PNG 二进制流) |
 
 > **提示**：详细的 API 调用示例请参考 [tools/api_tester.sh](../tools/api_tester.sh)。
+
+---
+
+## 📊 API 性能快照
+
+最新基准测试时间（2026-02-13）：
+
+* 目标地址：`http://192.168.0.105:17175`
+* 测试配置：warmup=2，samples=20，timeout=30s
+* 结果：140/140 请求成功（100%）
+
+| API | 方法 | 平均延迟 (ms) | P95 (ms) |
+| --- | --- | ---: | ---: |
+| `/v1/health` | `GET` | 48.35 | 65.26 |
+| `/v1/system/info` | `GET` | 113.95 | 125.19 |
+| `/v1/control/click` | `POST` | 101.06 | 185.11 |
+| `/v1/control/swipe` | `POST` | 211.42 | 224.06 |
+| `/v1/control/input` | `POST` | 807.88 | 908.69 |
+| `/v1/ui/xml` | `POST` | 2234.79 | 2272.72 |
+| `/v1/ui/screenshot` | `POST` | 414.51 | 450.69 |
+
+完整报告见：[`docs/API_PERFORMANCE_REPORT.md`](./API_PERFORMANCE_REPORT.md)
 
 ---
 
@@ -101,6 +123,7 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 * [ ] App 自适应的语义化点击 API
 * [ ] 截屏等 API 的性能优化
 * [ ] 增加基于 Token 的请求鉴权
+* [ ] 操作拟人化
 * [ ] 实现基于 ZeroTier 的原生虚拟局域网络
 
 欢迎提交 Issue 或 Pull Request ！

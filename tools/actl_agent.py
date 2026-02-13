@@ -140,6 +140,23 @@ class ActlClient:
         except urllib.error.URLError as exc:
             raise HttpError(f"ACTL request failed: {exc}") from exc
 
+    def _request_bytes(self, method: str, path: str, payload: dict[str, Any] | None = None) -> tuple[int, bytes, str]:
+        url = f"{self.base_url}{path}"
+        data = None
+        headers = {"Accept": "*/*"}
+        if payload is not None:
+            data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+            headers["Content-Type"] = "application/json"
+        req = urllib.request.Request(url=url, data=data, headers=headers, method=method)
+        try:
+            with urllib.request.urlopen(req, timeout=self.timeout_sec) as resp:
+                return resp.status, resp.read(), resp.headers.get("Content-Type", "")
+        except urllib.error.HTTPError as exc:
+            content_type = exc.headers.get("Content-Type", "") if exc.headers else ""
+            return exc.code, exc.read(), content_type
+        except urllib.error.URLError as exc:
+            raise HttpError(f"ACTL request failed: {exc}") from exc
+
     def get_system_info(self) -> dict[str, Any]:
         status, body = self._request_json("GET", "/v1/system/info")
         if status != 200:
@@ -150,13 +167,26 @@ class ActlClient:
         return self._request_json("POST", "/v1/ui/xml", {})
 
     def get_ui_screenshot(self) -> dict[str, Any]:
-        status, body = self._request_json("POST", "/v1/ui/screenshot", {})
+        status, body, content_type = self._request_bytes("POST", "/v1/ui/screenshot", {})
         if status != 200:
-            raise HttpError(f"/v1/ui/screenshot failed: HTTP {status}, body={body}")
-        obj = json.loads(body)
-        if obj.get("code") != 0:
-            raise HttpError(f"/v1/ui/screenshot code!=0: {body}")
-        return obj
+            preview = body.decode("utf-8", errors="replace")
+            raise HttpError(f"/v1/ui/screenshot failed: HTTP {status}, body={preview}")
+        if "image/png" not in content_type.lower():
+            preview = body.decode("utf-8", errors="replace")
+            raise HttpError(
+                "/v1/ui/screenshot unexpected content type: "
+                f"{content_type}, body={preview}"
+            )
+        image_b64 = base64.b64encode(body).decode("ascii")
+        return {
+            "code": 0,
+            "message": "ok",
+            "data": {
+                "mimeType": "image/png",
+                "bytes": len(body),
+                "imageBase64": image_b64,
+            },
+        }
 
     def click(self, x: int, y: int) -> tuple[bool, str]:
         status, body = self._request_json("POST", "/v1/control/click", {"x": x, "y": y})

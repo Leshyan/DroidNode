@@ -72,9 +72,31 @@ Default service endpoint: `http://<device-ip>:17171`
 | `/v1/control/swipe` | `POST` | Swipe, payload: `{"startX": int, "startY": int, "endX": int, "endY": int, "durationMs": int}` |
 | `/v1/control/input` | `POST` | Text input, payload: `{"text": "...", "pressEnter": bool, "enterAction": "auto/search/send/done/go/next/enter/none"}` |
 | `/v1/ui/xml` | `POST` | Get current page UI hierarchy (XML) |
-| `/v1/ui/screenshot` | `POST` | Get screenshot (Base64) |
+| `/v1/ui/screenshot` | `POST` | Get screenshot (PNG binary stream) |
 
 > **Tip**: for detailed API invocation examples, see [tools/api_tester.sh](./tools/api_tester.sh).
+
+---
+
+## 📊 API Performance Snapshot
+
+Latest benchmark run (2026-02-13):
+
+* Target: `http://192.168.0.105:17175`
+* Config: warmup=2, samples=20, timeout=30s
+* Result: 140/140 successful requests (100%)
+
+| API | Method | Mean (ms) | P95 (ms) |
+| --- | --- | ---: | ---: |
+| `/v1/health` | `GET` | 48.35 | 65.26 |
+| `/v1/system/info` | `GET` | 113.95 | 125.19 |
+| `/v1/control/click` | `POST` | 101.06 | 185.11 |
+| `/v1/control/swipe` | `POST` | 211.42 | 224.06 |
+| `/v1/control/input` | `POST` | 807.88 | 908.69 |
+| `/v1/ui/xml` | `POST` | 2234.79 | 2272.72 |
+| `/v1/ui/screenshot` | `POST` | 414.51 | 450.69 |
+
+Detailed report: [`docs/API_PERFORMANCE_REPORT.md`](./docs/API_PERFORMANCE_REPORT.md)
 
 ---
 
@@ -113,6 +135,7 @@ They show the current MVP UI, including the main control page and the debug page
 * [ ] App-adaptive semantic click APIs
 * [ ] Performance optimizations for screenshot and related APIs
 * [ ] Token-based request authentication
+* [ ] Action Anthropomorphization
 * [ ] Native virtual LAN integration based on ZeroTier
 
 Issues and Pull Requests are welcome!

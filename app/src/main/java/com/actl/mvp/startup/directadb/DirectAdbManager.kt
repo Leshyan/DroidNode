@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Build
 import com.actl.mvp.startup.AdbBinaryResult
 import com.actl.mvp.startup.AdbCommandResult
+import java.io.ByteArrayOutputStream
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
 
@@ -135,6 +136,28 @@ class DirectAdbManager(context: Context) {
                 AdbCommandResult(true, output.toString())
             }.getOrElse { error ->
                 AdbCommandResult(false, "Exec command failed: ${error.message}")
+            }
+        }
+    }
+
+    fun executeExecBytes(command: String): AdbBinaryResult {
+        if (command.isBlank()) {
+            return AdbBinaryResult(success = false, message = "Exec command is empty")
+        }
+        val active = synchronized(activeClientLock) { sharedActiveClient }
+            ?: return AdbBinaryResult(success = false, message = "No active adb connection")
+
+        return withShellLock(
+            onBusy = { AdbBinaryResult(success = false, message = "ADB command busy") }
+        ) {
+            runCatching {
+                val output = ByteArrayOutputStream()
+                active.execCommand(command) { bytes ->
+                    output.write(bytes)
+                }
+                AdbBinaryResult(success = true, bytes = output.toByteArray(), message = "ok")
+            }.getOrElse { error ->
+                AdbBinaryResult(success = false, message = "Exec command failed: ${error.message}")
             }
         }
     }

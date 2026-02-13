@@ -29,6 +29,8 @@ ui.xml
 tools/test.py
 tools/prepare_logo.py
 demo/
+tools/api_perf_full_*.json
+tools/screenshot_perf_*.json
 
 # Local configs / secrets
 .env

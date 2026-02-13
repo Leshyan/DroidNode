@@ -44,15 +44,21 @@ class WirelessStartupCoordinator(context: Context) {
             return false
         }
 
-        appendLog("Pairing with ${pairing.host}:${pairing.port} (direct adbd)")
-        val pairResult = directAdbManager.pair(pairing.host, pairing.port, pairCode)
+        appendLog(
+            "Pairing with $LOOPBACK_HOST:${pairing.port} " +
+                "(discovered ${pairing.host}:${pairing.port})"
+        )
+        val pairResult = directAdbManager.pair(LOOPBACK_HOST, pairing.port, pairCode)
         appendLog("Pair result: ${pairResult.message}")
         if (!pairResult.success) {
             return false
         }
 
-        appendLog("Connecting with ${connect.host}:${connect.port} (direct adbd)")
-        val connectResult = directAdbManager.connect(connect.host, connect.port)
+        appendLog(
+            "Connecting with $LOOPBACK_HOST:${connect.port} " +
+                "(discovered ${connect.host}:${connect.port})"
+        )
+        val connectResult = directAdbManager.connect(LOOPBACK_HOST, connect.port)
         appendLog("Connect result: ${connectResult.message}")
         return connectResult.success
     }
@@ -64,8 +70,8 @@ class WirelessStartupCoordinator(context: Context) {
             return false
         }
 
-        appendLog("Direct connect to ${endpoint.host}:${endpoint.port}")
-        val result = directAdbManager.connect(endpoint.host, endpoint.port)
+        appendLog("Direct connect to $LOOPBACK_HOST:${endpoint.port} (discovered ${endpoint.host}:${endpoint.port})")
+        val result = directAdbManager.connect(LOOPBACK_HOST, endpoint.port)
         appendLog("Direct connect result: ${result.message}")
         return result.success
     }
@@ -91,6 +97,7 @@ class WirelessStartupCoordinator(context: Context) {
     }
 
     companion object {
+        private const val LOOPBACK_HOST = "127.0.0.1"
         private const val MAX_LOG_LINES = 200
         private val timeFormatter = SimpleDateFormat("HH:mm:ss", Locale.US)
     }

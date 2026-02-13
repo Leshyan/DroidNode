@@ -173,13 +173,16 @@ run_screenshot_raw() {
   local path="$3"
 
   local tmp_body
+  local tmp_header
   tmp_body="$(mktemp)"
+  tmp_header="$(mktemp)"
 
   local curl_status
   local http_code
+  local content_type
   local url="${BASE_URL}${path}"
 
-  http_code="$(curl -sS -o "$tmp_body" -w "%{http_code}" \
+  http_code="$(curl -sS -D "$tmp_header" -o "$tmp_body" -w "%{http_code}" \
     --connect-timeout 4 --max-time 25 \
     -X "$method" \
     -H "Content-Type: application/json" \
@@ -195,58 +198,39 @@ run_screenshot_raw() {
     printf '  Result: FAIL (curl error)\n'
     printf '  Error : %s\n' "$(cat "$ERR_FILE")"
     FAIL_COUNT=$((FAIL_COUNT + 1))
-    rm -f "$tmp_body"
+    rm -f "$tmp_body" "$tmp_header"
     return
   fi
 
-  local response_body
-  response_body="$(cat "$tmp_body")"
+  content_type="$(grep -i '^Content-Type:' "$tmp_header" | tail -n 1 | cut -d':' -f2- | tr -d '\r' | xargs)"
+  local body_bytes
+  body_bytes="$(wc -c < "$tmp_body" | tr -d ' ')"
   printf '  Actual: HTTP %s\n' "$http_code"
-  printf '  RespB : %s\n' "$(wc -c < "$tmp_body" | tr -d ' ')"
-  printf '  JSON  : %s\n' "$response_body"
+  printf '  Type  : %s\n' "${content_type:-N/A}"
+  printf '  RespB : %s\n' "$body_bytes"
 
-  local mime_type
-  local img_bytes
-  local b64_head
-  local image_base64
-  local screenshot_file
-  mime_type="$(printf '%s' "$response_body" | sed -n 's/.*"mimeType":"\([^"]*\)".*/\1/p' | head -n 1)"
-  img_bytes="$(printf '%s' "$response_body" | sed -n 's/.*"bytes":\([0-9][0-9]*\).*/\1/p' | head -n 1)"
-  image_base64="$(printf '%s' "$response_body" | sed -n 's/.*"imageBase64":"\([^"]*\)".*/\1/p' | head -n 1)"
-  b64_head="$(printf '%s' "$image_base64" | cut -c1-16)"
-  [ -z "$mime_type" ] && mime_type="N/A"
-  [ -z "$img_bytes" ] && img_bytes="0"
-  [ -z "$b64_head" ] && b64_head="N/A"
-  printf '  Data  : mimeType=%s bytes=%s b64Head=%s\n' "$mime_type" "$img_bytes" "$b64_head"
-
-  if [ "$http_code" = "200" ] && [ "$mime_type" = "image/png" ] && [ "$img_bytes" -gt 0 ]; then
+  if [ "$http_code" = "200" ] && printf '%s' "$content_type" | grep -qi 'image/png' && [ "$body_bytes" -gt 0 ]; then
+    local screenshot_file
     screenshot_file="./actl_screenshot_$(date +%Y%m%d_%H%M%S).png"
-    if printf '%s' "$image_base64" | base64 --decode > "$screenshot_file" 2>/dev/null || \
-       printf '%s' "$image_base64" | base64 -D > "$screenshot_file" 2>/dev/null; then
-      if [ -s "$screenshot_file" ]; then
-        printf '  Save  : %s\n' "$screenshot_file"
-        printf '  Result: PASS\n'
-        PASS_COUNT=$((PASS_COUNT + 1))
-      else
-        printf '  Save  : failed (empty image file)\n'
-        printf '  Result: FAIL\n'
-        FAIL_COUNT=$((FAIL_COUNT + 1))
-      fi
-    else
-      printf '  Save  : failed (base64 decode error)\n'
-      printf '  Result: FAIL\n'
-      FAIL_COUNT=$((FAIL_COUNT + 1))
-      rm -f "$screenshot_file"
-    fi
+    cp "$tmp_body" "$screenshot_file"
+    printf '  Save  : %s\n' "$screenshot_file"
+    printf '  Result: PASS\n'
+    PASS_COUNT=$((PASS_COUNT + 1))
   elif [ "$http_code" = "500" ] || [ "$http_code" = "503" ]; then
+    local response_body
+    response_body="$(cat "$tmp_body")"
+    printf '  JSON  : %s\n' "$response_body"
     printf '  Result: PASS (debug payload shown)\n'
     PASS_COUNT=$((PASS_COUNT + 1))
   else
+    local response_body
+    response_body="$(cat "$tmp_body")"
+    printf '  Body  : %s\n' "$response_body"
     printf '  Result: FAIL\n'
     FAIL_COUNT=$((FAIL_COUNT + 1))
   fi
 
-  rm -f "$tmp_body"
+  rm -f "$tmp_body" "$tmp_header"
 }
 
 print_line
@@ -263,7 +247,7 @@ run_test "Swipe API Invalid" "POST" "/v1/control/swipe" "400" '{"startX":-1,"sta
 
 if [ "$PROFILE" = "full" ]; then
   run_dump_raw "UI XML API Raw XML" "POST" "/v1/ui/xml"
-  run_screenshot_raw "UI Screenshot API Base64" "POST" "/v1/ui/screenshot"
+  run_screenshot_raw "UI Screenshot API" "POST" "/v1/ui/screenshot"
 fi
 
 print_line

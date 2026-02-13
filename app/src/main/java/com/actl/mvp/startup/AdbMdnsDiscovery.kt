@@ -4,6 +4,8 @@ import android.content.Context
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
 import java.net.InetAddress
+import java.net.NetworkInterface
+import java.util.Locale
 
 class AdbMdnsDiscovery(
     context: Context,
@@ -18,6 +20,9 @@ class AdbMdnsDiscovery(
 
     private var pairingEndpoint: AdbEndpoint? = null
     private var connectEndpoint: AdbEndpoint? = null
+    private val localHostAddresses: Set<String> by lazy(LazyThreadSafetyMode.NONE) {
+        collectLocalHostAddresses()
+    }
 
     fun start() {
         stop()
@@ -112,6 +117,10 @@ class AdbMdnsDiscovery(
                         onLog("Resolved service has no host: ${info.serviceName}")
                         return
                     }
+                    if (!isLocalHost(host)) {
+                        onLog("Ignoring non-local service: ${info.serviceName} -> $host:${info.port}")
+                        return
+                    }
                     onResolved(AdbEndpoint(host, info.port, info.serviceName ?: "unknown"))
                 }
             }
@@ -120,6 +129,37 @@ class AdbMdnsDiscovery(
 
     private fun pickHost(host: InetAddress?): String? {
         return host?.hostAddress?.takeIf { it.isNotBlank() }
+    }
+
+    private fun isLocalHost(host: String): Boolean {
+        val normalized = normalizeHostAddress(host)
+        return normalized == LOOPBACK_V4 ||
+            normalized == LOOPBACK_V6 ||
+            localHostAddresses.contains(normalized)
+    }
+
+    private fun collectLocalHostAddresses(): Set<String> {
+        val addresses = mutableSetOf(LOOPBACK_V4, LOOPBACK_V6)
+        runCatching {
+            val interfaces = NetworkInterface.getNetworkInterfaces() ?: return@runCatching
+            while (interfaces.hasMoreElements()) {
+                val networkInterface = interfaces.nextElement()
+                if (!networkInterface.isUp || networkInterface.isLoopback) {
+                    continue
+                }
+                val inetAddresses = networkInterface.inetAddresses
+                while (inetAddresses.hasMoreElements()) {
+                    val raw = inetAddresses.nextElement().hostAddress.orEmpty()
+                    val normalized = normalizeHostAddress(raw)
+                    if (normalized.isNotBlank()) {
+                        addresses += normalized
+                    }
+                }
+            }
+        }.onFailure { error ->
+            onLog("Local host detect failed: ${error.message}")
+        }
+        return addresses
     }
 
     private fun publishState(discovering: Boolean) {
@@ -135,9 +175,18 @@ class AdbMdnsDiscovery(
     companion object {
         private const val PAIRING_SERVICE_TYPE = "_adb-tls-pairing._tcp."
         private const val CONNECT_SERVICE_TYPE = "_adb-tls-connect._tcp."
+        private const val LOOPBACK_V4 = "127.0.0.1"
+        private const val LOOPBACK_V6 = "::1"
 
         private fun normalizeServiceType(raw: String?): String {
             return raw.orEmpty().trim().trimEnd('.')
+        }
+
+        private fun normalizeHostAddress(raw: String?): String {
+            return raw.orEmpty()
+                .trim()
+                .substringBefore('%')
+                .lowercase(Locale.US)
         }
     }
 }
