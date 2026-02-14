@@ -9,6 +9,9 @@
     "model": "<YOUR_LLM_MODEL>",
     "temperature": 0.2,
     "max_tokens": 4096,
+    "thinking": {
+      "type": "enabled"
+    },
     "timeout_sec": 60
   },
   "vlm": {
@@ -17,6 +20,9 @@
     "model": "<YOUR_VLM_MODEL>",
     "temperature": 0.2,
     "max_tokens": 4096,
+    "thinking": {
+      "type": "enabled"
+    },
     "timeout_sec": 60
   },
   "agent": {

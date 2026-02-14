@@ -25,7 +25,7 @@ tools/.venv/
 archives/
 tools/agent_captures/
 actl_screenshot_*.png
-ui.xml
+note.md
 tools/test.py
 tools/prepare_logo.py
 demo/
@@ -36,6 +36,8 @@ tools/screenshot_perf_*.json
 .env
 .env.*
 tools/actl_agent_config.json
+clients/llm-controller/config.json
+clients/llm-controller/memory.db
 
 # Binary artifacts
 *.apk

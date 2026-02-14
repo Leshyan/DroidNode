@@ -1,0 +1,38 @@
+{
+  "actl": {
+    "base_url": "http://<device-ip>:17175",
+    "timeout_sec": 20
+  },
+  "vlm": {
+    "base_url": "https://open.bigmodel.cn/api/paas/v4/chat/completions",
+    "api_key": "<your-api-key>",
+    "model": "glm-4.6v",
+    "temperature": 0.2,
+    "max_tokens": 2048,
+    "thinking": {
+      "type": "enabled"
+    },
+    "timeout_sec": 60
+  },
+  "vlm_stage1": {
+    "base_url": "https://open.bigmodel.cn/api/paas/v4/chat/completions",
+    "api_key": "<your-api-key>",
+    "model": "<stage1-model>",
+    "temperature": 0.2,
+    "max_tokens": 1024,
+    "thinking": {
+      "type": "enabled"
+    },
+    "timeout_sec": 60
+  },
+  "controller": {
+    "max_steps": 20,
+    "wait_after_action_sec": 0.35,
+    "default_wait_sec": 2,
+    "grid_min_segments": 3,
+    "grid_max_segments": 12,
+    "grid_target_log_error": 0.2,
+    "memory_db_path": "clients/llm-controller/memory.db",
+    "memory_recent_limit": 12
+  }
+}

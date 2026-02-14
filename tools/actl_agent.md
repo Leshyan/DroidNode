@@ -2,14 +2,15 @@
 
 ## Purpose
 - Use ACTL APIs to execute mobile operations.
-- Prefer `/v1/ui/xml` + LLM.
-- Fallback to `/v1/ui/screenshot` + VLM when XML is invalid/unavailable.
+- Use `/v1/ui/screenshot` + VLM only.
 - When Tap has no effect, next VLM call receives both: full screenshot + local focus crop (with grid).
 
 ## Config
 Edit `tools/actl_agent_config.json`:
 - `llm.base_url`, `llm.api_key`, `llm.model`
+- `llm.thinking`: optional, e.g. `{"type":"enabled"}` for providers like BigModel
 - `vlm.base_url`, `vlm.api_key`, `vlm.model`
+- `vlm.thinking`: optional, e.g. `{"type":"enabled"}`
 - `actl.base_url` for your APK API service
 - `agent.wait_after_tap_sec`: delay before checking tap effect
 - `agent.tap_retry_on_no_change`: auto retries with offset points when UI does not change

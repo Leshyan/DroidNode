@@ -109,10 +109,31 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 │   ├── startup/        # mDNS 发现与无线 ADB 握手逻辑
 │   │   └── directadb/  # 纯 Kotlin 实现的 ADB 协议封装
 │   └── ime/            # 自定义输入法服务
+├── clients/            # 外挂工具目录（不属于核心 App 运行时）
+│   └── llm-controller/ # 调用 DroidNode API 的控制器 Demo
 ├── tools/              # 客户端测试脚本 (Python/Shell)
 └── LICENSE             # 开源许可证
 
 ```
+
+---
+
+## 🔌 Clients（外部扩展）
+
+`clients/` 用于存放基于 DroidNode API 的外部工具。  
+这些工具属于可选客户端能力，不属于 Android 节点本体运行时。
+
+当前 Demo：[`clients/llm-controller`](../clients/llm-controller/README.md)
+
+LLM 控制器原理：
+
+* **API 闭环控制**：循环执行“截图 -> 决策 -> 调用控制 API”。
+* **自适应网格规划**：每帧将屏幕划分为 `m*n`（`m,n >= 3`）区域，尽量让单元格接近 1:1，且总区域数尽可能小。
+* **两阶段定位**：
+  * 阶段 1：模型输出动作、目标及区域（可多区域）。
+  * 阶段 2：模型在裁剪图内输出归一化偏移，再反算成全局绝对坐标。
+* **多区域合并**：当目标跨多个区域时，先补齐为最小覆盖矩形，再进行一次裁剪给阶段 2。
+* **持久化记忆**：步骤事件写入 SQLite，便于短期上下文、复盘与调试分析。
 
 ---
 

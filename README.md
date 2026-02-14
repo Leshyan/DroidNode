@@ -109,10 +109,31 @@ Detailed report: [`docs/API_PERFORMANCE_REPORT.md`](./docs/API_PERFORMANCE_REPOR
 │   ├── startup/        # mDNS discovery and wireless ADB handshake logic
 │   │   └── directadb/  # Pure Kotlin ADB protocol implementation
 │   └── ime/            # Custom input method service
+├── clients/            # External tools / addons ("外挂"), not core app runtime
+│   └── llm-controller/ # Demo controller that calls DroidNode APIs
 ├── tools/              # Client-side test scripts (Python/Shell)
 └── LICENSE             # Open-source license
 
 ```
+
+---
+
+## 🔌 Clients (External Addons)
+
+`clients/` is the workspace for external tooling built on top of DroidNode APIs.  
+These tools are optional clients, not part of the Android node runtime itself.
+
+Current demo: [`clients/llm-controller`](./clients/llm-controller/README.md)
+
+Controller principles:
+
+* **API-driven closed loop**: repeatedly captures screen via `/v1/ui/screenshot`, decides next action, then executes control APIs.
+* **Adaptive grid planning**: each screenshot is partitioned into an `m*n` grid (`m,n >= 3`) with near-square cells and minimal total cells.
+* **Two-stage localization**:
+  * Stage-1 model outputs action + target + region(s).
+  * Stage-2 model predicts normalized offsets inside the selected crop, then maps back to absolute screen coordinates.
+* **Multi-region merge**: if a target spans multiple regions, regions are expanded to a minimal covering rectangle and cropped once for Stage-2.
+* **Persistent memory**: step events are stored in SQLite for short-term task context and replay/debug analysis.
 
 ---
 

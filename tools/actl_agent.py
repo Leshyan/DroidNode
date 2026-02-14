@@ -3,8 +3,7 @@
 ACTL LLM/VLM agent.
 
 Behavior:
-- Prefer XML UI state via /v1/ui/xml and call LLM.
-- If XML is unavailable/invalid, fallback to /v1/ui/screenshot and call VLM.
+- Use screenshot UI state via /v1/ui/screenshot and call VLM only.
 - Parse model action output and execute ACTL APIs.
 """
 
@@ -115,6 +114,13 @@ class FocusContext:
     reason: str = ""
 
 
+@dataclass
+class ScreenshotFrame:
+    png_bytes: bytes
+    image_b64: str
+    content_type: str
+
+
 class HttpError(RuntimeError):
     pass
 
@@ -166,7 +172,7 @@ class ActlClient:
     def get_ui_xml(self) -> tuple[int, str]:
         return self._request_json("POST", "/v1/ui/xml", {})
 
-    def get_ui_screenshot(self) -> dict[str, Any]:
+    def get_ui_screenshot(self) -> ScreenshotFrame:
         status, body, content_type = self._request_bytes("POST", "/v1/ui/screenshot", {})
         if status != 200:
             preview = body.decode("utf-8", errors="replace")
@@ -178,15 +184,11 @@ class ActlClient:
                 f"{content_type}, body={preview}"
             )
         image_b64 = base64.b64encode(body).decode("ascii")
-        return {
-            "code": 0,
-            "message": "ok",
-            "data": {
-                "mimeType": "image/png",
-                "bytes": len(body),
-                "imageBase64": image_b64,
-            },
-        }
+        return ScreenshotFrame(
+            png_bytes=body,
+            image_b64=image_b64,
+            content_type=content_type,
+        )
 
     def click(self, x: int, y: int) -> tuple[bool, str]:
         status, body = self._request_json("POST", "/v1/control/click", {"x": x, "y": y})
@@ -213,22 +215,45 @@ class ActlClient:
 
 
 class OpenAICompatClient:
-    def __init__(self, base_url: str, api_key: str, model: str, timeout_sec: int, temperature: float, max_tokens: int):
+    def __init__(
+        self,
+        base_url: str,
+        api_key: str,
+        model: str,
+        timeout_sec: int,
+        temperature: float | None,
+        max_tokens: int | None,
+        thinking: dict[str, Any] | bool | None = None,
+        extra_body: dict[str, Any] | None = None,
+    ):
         self.base_url = base_url
         self.api_key = api_key
         self.model = model
         self.timeout_sec = timeout_sec
         self.temperature = temperature
         self.max_tokens = max_tokens
+        if isinstance(thinking, dict):
+            self.thinking = thinking
+        elif thinking is True:
+            self.thinking = {"type": "enabled"}
+        else:
+            self.thinking = None
+        self.extra_body = extra_body if isinstance(extra_body, dict) else {}
         self.last_finish_reason = ""
 
     def _chat(self, messages: list[dict[str, Any]]) -> str:
-        payload = {
+        payload: dict[str, Any] = {
             "model": self.model,
             "messages": messages,
-            "temperature": self.temperature,
-            "max_tokens": self.max_tokens,
         }
+        if self.temperature is not None:
+            payload["temperature"] = self.temperature
+        if self.max_tokens is not None:
+            payload["max_tokens"] = self.max_tokens
+        if self.thinking is not None:
+            payload["thinking"] = self.thinking
+        if self.extra_body:
+            payload.update(self.extra_body)
         req = urllib.request.Request(
             url=self.base_url,
             data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
@@ -248,13 +273,19 @@ class OpenAICompatClient:
             raise HttpError(f"LLM/VLM request failed: {exc}") from exc
 
         obj = json.loads(body)
-        self.last_finish_reason = str(obj.get("choices", [{}])[0].get("finish_reason", ""))
-        choice = obj["choices"][0]["message"]["content"]
+        choices = obj.get("choices", [])
+        first_choice = choices[0] if isinstance(choices, list) and choices else {}
+        self.last_finish_reason = str(first_choice.get("finish_reason", ""))
+        message = first_choice.get("message", {}) if isinstance(first_choice, dict) else {}
+        choice = message.get("content", "")
         if isinstance(choice, list):
             texts = []
             for item in choice:
-                if isinstance(item, dict) and item.get("type") == "text":
-                    texts.append(str(item.get("text", "")))
+                if isinstance(item, dict):
+                    item_type = str(item.get("type", ""))
+                    if item_type in ("text", "output_text"):
+                        text_value = item.get("text", item.get("content", ""))
+                        texts.append(str(text_value))
             return "\n".join(texts).strip()
         return str(choice).strip()
 
@@ -353,7 +384,10 @@ def _parse_quoted(arg_text: str, key: str) -> str | None:
 
 
 def _parse_pair(arg_text: str, key: str) -> tuple[int, int] | None:
-    m = re.search(rf"{re.escape(key)}\s*=\s*\[\s*(-?\d+)\s*,\s*(-?\d+)\s*\]", arg_text)
+    m = re.search(
+        rf"{re.escape(key)}\s*=\s*(?:\"|')?\[\s*(-?\d+)\s*,\s*(-?\d+)\s*\](?:\"|')?",
+        arg_text,
+    )
     if not m:
         return None
     return int(m.group(1)), int(m.group(2))
@@ -642,6 +676,12 @@ def _save_debug_image(path: Path, image_b64: str) -> None:
     print(f"[capture] saved {path}")
 
 
+def _save_debug_image_bytes(path: Path, image_bytes: bytes) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(image_bytes)
+    print(f"[capture] saved {path}")
+
+
 def fetch_ui_state(
     client: ActlClient,
     save_debug_screenshot: bool,
@@ -650,19 +690,14 @@ def fetch_ui_state(
     capture_dir: Path,
     capture_reason: str,
 ) -> UiState:
-    status, body = client.get_ui_xml()
-    if status == 200 and _xml_is_useful(body):
-        sig = hashlib.sha256(body.encode("utf-8", errors="replace")).hexdigest()
-        return UiState(source="xml", text=body, state_sig=f"xml:{sig}")
-
     shot = client.get_ui_screenshot()
-    image_b64 = shot["data"]["imageBase64"]
+    image_b64 = shot.image_b64
     if save_debug_screenshot:
         stamp = time.time_ns()
         full_path = capture_dir / f"step_{step:02d}_{capture_reason}_{stamp}_full.png"
-        _save_debug_image(full_path, image_b64)
-    ah = _compute_screen_ahash(image_b64)
-    sig = hashlib.sha256(image_b64.encode("ascii", errors="ignore")).hexdigest()
+        _save_debug_image_bytes(full_path, shot.png_bytes)
+    ah = _compute_screen_ahash(shot.png_bytes)
+    sig = hashlib.sha256(shot.png_bytes).hexdigest()
     return UiState(
         source="screenshot",
         text="",
@@ -672,16 +707,16 @@ def fetch_ui_state(
     )
 
 
-def _compute_screen_ahash(image_b64: str, size: int = 8) -> int | None:
+def _compute_screen_ahash(image_bytes: bytes, size: int = 8) -> int | None:
     try:
         from PIL import Image  # type: ignore
     except Exception:
         return None
     try:
-        raw = base64.b64decode(image_b64)
-        with Image.open(io.BytesIO(raw)) as img:
+        with Image.open(io.BytesIO(image_bytes)) as img:
             g = img.convert("L").resize((size, size))
-            pixels = list(g.getdata())
+            # L mode is 8-bit grayscale, so tobytes() is a flat pixel buffer.
+            pixels = list(g.tobytes())
             if not pixels:
                 return None
             avg = sum(pixels) / len(pixels)
@@ -783,26 +818,19 @@ def _tap_with_retry(
 
 def run_agent(config: dict[str, Any], task: str, max_steps: int) -> int:
     actl_cfg = config["actl"]
-    llm_cfg = config["llm"]
     vlm_cfg = config["vlm"]
     agent_cfg = config.get("agent", {})
 
     client = ActlClient(actl_cfg["base_url"], int(actl_cfg.get("timeout_sec", 20)))
-    llm = OpenAICompatClient(
-        llm_cfg["base_url"],
-        llm_cfg["api_key"],
-        llm_cfg["model"],
-        int(llm_cfg.get("timeout_sec", 60)),
-        float(llm_cfg.get("temperature", 0.2)),
-        int(llm_cfg.get("max_tokens", 4096)),
-    )
     vlm = OpenAICompatClient(
         vlm_cfg["base_url"],
         vlm_cfg["api_key"],
         vlm_cfg["model"],
         int(vlm_cfg.get("timeout_sec", 60)),
-        float(vlm_cfg.get("temperature", 0.2)),
-        int(vlm_cfg.get("max_tokens", 4096)),
+        float(vlm_cfg["temperature"]) if "temperature" in vlm_cfg else None,
+        int(vlm_cfg["max_tokens"]) if "max_tokens" in vlm_cfg else None,
+        vlm_cfg.get("thinking"),
+        vlm_cfg.get("extra_body"),
     )
 
     info = client.get_system_info()
@@ -824,6 +852,7 @@ def run_agent(config: dict[str, Any], task: str, max_steps: int) -> int:
 
     print(f"[agent] target={actl_cfg['base_url']} task={task}")
     print(f"[agent] clickRange={click_range}")
+    print("[agent] mode=vlm-only (screenshot driven)")
     print(
         f"[agent] captureDir={capture_dir} saveCapture={save_debug_screenshot} "
         f"focusRadius={focus_radius_px}px focusGrid={focus_grid_px}px"
@@ -870,22 +899,17 @@ def run_agent(config: dict[str, Any], task: str, max_steps: int) -> int:
             focus_ctx=focus_for_this_step,
         )
 
-        if state.source == "xml":
-            raw = llm.chat_text(prompt)
-            model_used = "llm"
-            finish_reason = llm.last_finish_reason
-        else:
-            images = [state.image_b64]
-            if focus_for_this_step is not None:
-                images.append(focus_for_this_step.image_b64)
-                print(
-                    f"[focus] step={step} provide full+local images "
-                    f"(local_center=({focus_for_this_step.center_x},{focus_for_this_step.center_y}), "
-                    f"radius={focus_for_this_step.radius_px})"
-                )
-            raw = vlm.chat_with_images(prompt, images)
-            model_used = "vlm"
-            finish_reason = vlm.last_finish_reason
+        images = [state.image_b64]
+        if focus_for_this_step is not None:
+            images.append(focus_for_this_step.image_b64)
+            print(
+                f"[focus] step={step} provide full+local images "
+                f"(local_center=({focus_for_this_step.center_x},{focus_for_this_step.center_y}), "
+                f"radius={focus_for_this_step.radius_px})"
+            )
+        raw = vlm.chat_with_images(prompt, images)
+        model_used = "vlm"
+        finish_reason = vlm.last_finish_reason
 
         answer = _extract_answer(raw)
         action = parse_action(answer)
@@ -917,38 +941,28 @@ def run_agent(config: dict[str, Any], task: str, max_steps: int) -> int:
                     last_tap_point=last_tap_point,
                     focus_ctx=focus_for_this_step,
                 )
-                if state.source == "xml":
-                    raw2 = llm._chat(
-                        [
-                            {"role": "system", "content": STRICT_ACTION_PROMPT},
-                            {"role": "user", "content": strict_user},
-                        ]
-                    )
-                    finish_reason2 = llm.last_finish_reason
-                    model_used2 = "llm"
-                else:
-                    raw2 = vlm._chat(
-                        [
-                            {"role": "system", "content": STRICT_ACTION_PROMPT},
-                            {
-                                "role": "user",
-                                "content": (
-                                    [{"type": "text", "text": strict_user}]
-                                    + [{"type": "image_url", "image_url": {"url": f"data:image/png;base64,{state.image_b64}"}}]
-                                    + (
-                                        []
-                                        if focus_for_this_step is None
-                                        else [{
-                                            "type": "image_url",
-                                            "image_url": {"url": f"data:image/png;base64,{focus_for_this_step.image_b64}"},
-                                        }]
-                                    )
-                                ),
-                            },
-                        ]
-                    )
-                    finish_reason2 = vlm.last_finish_reason
-                    model_used2 = "vlm"
+                raw2 = vlm._chat(
+                    [
+                        {"role": "system", "content": STRICT_ACTION_PROMPT},
+                        {
+                            "role": "user",
+                            "content": (
+                                [{"type": "text", "text": strict_user}]
+                                + [{"type": "image_url", "image_url": {"url": f"data:image/png;base64,{state.image_b64}"}}]
+                                + (
+                                    []
+                                    if focus_for_this_step is None
+                                    else [{
+                                        "type": "image_url",
+                                        "image_url": {"url": f"data:image/png;base64,{focus_for_this_step.image_b64}"},
+                                    }]
+                                )
+                            ),
+                        },
+                    ]
+                )
+                finish_reason2 = vlm.last_finish_reason
+                model_used2 = "vlm"
 
                 answer2 = _extract_answer(raw2)
                 action2 = parse_action(answer2)
@@ -1056,11 +1070,11 @@ def run_agent(config: dict[str, Any], task: str, max_steps: int) -> int:
             if post_state is None or post_state.source != "screenshot":
                 # Ensure we have a full screenshot as focus generation base.
                 shot = client.get_ui_screenshot()
-                shot_b64 = shot["data"]["imageBase64"]
+                shot_b64 = shot.image_b64
                 if save_debug_screenshot:
                     stamp = time.time_ns()
                     base_path = capture_dir / f"step_{step:02d}_focus_base_{stamp}.png"
-                    _save_debug_image(base_path, shot_b64)
+                    _save_debug_image_bytes(base_path, shot.png_bytes)
                 focus_base_b64 = shot_b64
             else:
                 focus_base_b64 = post_state.image_b64
