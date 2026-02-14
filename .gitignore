@@ -47,3 +47,5 @@ clients/llm-controller/memory.db
 # Logs / temp
 *.log
 *.tmp
+
+tools/build_local_fast.sh

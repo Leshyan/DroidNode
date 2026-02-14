@@ -3,7 +3,7 @@
 [中文文档 (Chinese)](./docs/README-CN.md)
 
 <p align="center">
-  <img src="./docs/assets/droidnode-logo.png" alt="DroidNode Logo" width="280" />
+  <img src="./docs/assets/droidnode-logo.svg" alt="DroidNode Logo" width="280" style="filter: none; mix-blend-mode: normal;" />
 </p>
 
 **DroidNode** is a lightweight runtime on Android. It API-enables low-level mobile control capabilities via wireless debugging (ADB over Wi-Fi), turning a phone into an automation node that can be remotely controlled through standard HTTP requests.

@@ -3,7 +3,7 @@
 [English README](../README.md)
 
 <p align="center">
-  <img src="./assets/droidnode-logo.png" alt="DroidNode Logo" width="280" />
+  <img src="./assets/droidnode-logo.svg" alt="DroidNode Logo" width="280" style="filter: none; mix-blend-mode: normal;" />
 </p>
 
 **DroidNode** 是运行在 Android 侧的轻量级运行时。它基于无线调试能力（ADB over Wi-Fi）将手机底层控制能力 API 化，使设备可通过 HTTP 接口在局域网内被远程调用。
