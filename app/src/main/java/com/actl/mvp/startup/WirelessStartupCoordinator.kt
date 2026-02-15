@@ -1,7 +1,10 @@
 package com.actl.mvp.startup
 
 import android.content.Context
-import com.actl.mvp.startup.directadb.DirectAdbManager
+import com.actl.mvp.adb.discovery.AdbEndpoint
+import com.actl.mvp.adb.discovery.AdbMdnsDiscovery
+import com.actl.mvp.adb.discovery.DiscoveryState
+import com.actl.mvp.adb.session.AdbRuntime
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,7 +15,7 @@ import java.util.Locale
 
 class WirelessStartupCoordinator(context: Context) {
 
-    private val directAdbManager = DirectAdbManager(context)
+    private val directAdbManager = AdbRuntime.adbManager
 
     private val _state = MutableStateFlow(DiscoveryState())
     val state: StateFlow<DiscoveryState> = _state.asStateFlow()

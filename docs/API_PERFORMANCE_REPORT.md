@@ -30,6 +30,5 @@
 ## Reproduce
 
 ```bash
-python3 tools/api_perf_tester.py 192.168.0.105 17175 --warmup 2 --samples 20 --interval-ms 0 --timeout 30.0
+python3 tests/api_perf_tester.py 192.168.0.105 17175 --warmup 2 --samples 20 --interval-ms 0 --timeout 30.0
 ```
-

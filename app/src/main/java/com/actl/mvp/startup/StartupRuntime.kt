@@ -1,7 +1,8 @@
 package com.actl.mvp.startup
 
 import com.actl.mvp.ActlApp
-import com.actl.mvp.startup.directadb.DirectAdbManager
+import com.actl.mvp.adb.session.AdbRuntime
+import com.actl.mvp.adb.session.DirectAdbManager
 
 object StartupRuntime {
     val coordinator: WirelessStartupCoordinator by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
@@ -9,7 +10,7 @@ object StartupRuntime {
     }
 
     val adbManager: DirectAdbManager by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
-        DirectAdbManager(ActlApp.appContext)
+        AdbRuntime.adbManager
     }
 
     val settings: AppSettings by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {

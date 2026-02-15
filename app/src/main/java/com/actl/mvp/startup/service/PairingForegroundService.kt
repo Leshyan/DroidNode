@@ -13,9 +13,10 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.RemoteInput
 import androidx.core.content.ContextCompat
 import com.actl.mvp.MainActivity
-import com.actl.mvp.startup.AdbEndpoint
-import com.actl.mvp.startup.AdbMdnsDiscovery
-import com.actl.mvp.startup.directadb.DirectAdbManager
+import com.actl.mvp.adb.discovery.AdbEndpoint
+import com.actl.mvp.adb.discovery.AdbMdnsDiscovery
+import com.actl.mvp.adb.session.AdbRuntime
+import com.actl.mvp.adb.session.DirectAdbManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -40,7 +41,7 @@ class PairingForegroundService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        directAdbManager = DirectAdbManager(applicationContext)
+        directAdbManager = AdbRuntime.adbManager
         ensureNotificationChannel()
     }
 

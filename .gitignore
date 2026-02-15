@@ -26,11 +26,10 @@ archives/
 tools/agent_captures/
 actl_screenshot_*.png
 note.md
-tools/test.py
 tools/prepare_logo.py
 demo/
-tools/api_perf_full_*.json
-tools/screenshot_perf_*.json
+tests/api_perf_full_*.json
+tests/screenshot_perf_*.json
 
 # Local configs / secrets
 .env
@@ -48,4 +47,4 @@ clients/llm-controller/memory.db
 *.log
 *.tmp
 
-tools/build_local_fast.sh
+tests/build_local_fast.sh

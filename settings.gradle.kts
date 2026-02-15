@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "actl-mvp"
 include(":app")
+include(":api-registry-ksp")

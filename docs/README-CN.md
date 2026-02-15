@@ -74,7 +74,7 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 | `/v1/ui/xml` | `POST` | 获取当前页面的 UI 层次结构 (XML) |
 | `/v1/ui/screenshot` | `POST` | 获取屏幕截图 (PNG 二进制流) |
 
-> **提示**：详细的 API 调用示例请参考 [tools/api_tester.sh](../tools/api_tester.sh)。
+> **提示**：详细的 API 调用示例请参考 [tests/api_tester.sh](../tests/api_tester.sh)。
 
 ---
 

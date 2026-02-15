@@ -2,6 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.serialization")
+    id("com.google.devtools.ksp")
 }
 
 android {
@@ -80,4 +81,6 @@ dependencies {
     implementation("io.ktor:ktor-server-content-negotiation:2.3.13")
     implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.13")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+
+    ksp(project(":api-registry-ksp"))
 }

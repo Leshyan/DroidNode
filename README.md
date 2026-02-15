@@ -74,7 +74,7 @@ Default service endpoint: `http://<device-ip>:17171`
 | `/v1/ui/xml` | `POST` | Get current page UI hierarchy (XML) |
 | `/v1/ui/screenshot` | `POST` | Get screenshot (PNG binary stream) |
 
-> **Tip**: for detailed API invocation examples, see [tools/api_tester.sh](./tools/api_tester.sh).
+> **Tip**: for detailed API invocation examples, see [tests/api_tester.sh](./tests/api_tester.sh).
 
 ---
 
