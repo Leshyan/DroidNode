@@ -25,7 +25,7 @@ Unlike traditional automation frameworks, DroidNode focuses on the **infrastruct
 * **Embedded API Server**: built on Ktor, listening on port `17171` by default.
 * **Primitive controls**: standardized APIs for click, swipe, text input, UI tree capture (XML), and screenshots.
 * **Native input enhancement**: built-in `ActlImeService` IME supports UTF-8 injection and improves remote input reliability for focus/text scenarios.
-* **Modular architecture**: APIs are registered in a plugin-like modular way, making custom capability extension straightforward.
+* **Modular architecture**: APIs are auto-registered by a KSP-generated registry, and route paths are derived from package paths (e.g. `com.actl.mvp.api.v1.control.click -> /v1/control/click`).
 
 ---
 
@@ -104,14 +104,22 @@ Detailed report: [`docs/API_PERFORMANCE_REPORT.md`](./docs/API_PERFORMANCE_REPOR
 
 ```text
 .
+├── api-registry-ksp/  # KSP processor that generates the API registry
 ├── app/src/main/java/com/actl/mvp/
-│   ├── api/            # Ktor framework and API implementations (v1/)
-│   ├── startup/        # mDNS discovery and wireless ADB handshake logic
-│   │   └── directadb/  # Pure Kotlin ADB protocol implementation
+│   ├── api/
+│   │   ├── framework/  # ApiDefinition, server wiring, KSP registry bridge, path resolver
+│   │   └── v1/         # Versioned API implementations by route path
+│   ├── adb/
+│   │   ├── core/       # Pure Kotlin ADB protocol, pairing, transport internals
+│   │   ├── session/    # Shared DirectAdbManager runtime and command result models
+│   │   └── discovery/  # mDNS discovery and endpoint state models
+│   ├── startup/
+│   │   └── service/    # Foreground services for pairing and API server lifecycle
 │   └── ime/            # Custom input method service
-├── clients/            # External tools / addons ("外挂"), not core app runtime
+├── clients/            # External tools / addons , not core app runtime
 │   └── llm-controller/ # Demo controller that calls DroidNode APIs
-├── tools/              # Client-side test scripts (Python/Shell)
+├── tests/              # API/performance/build test scripts (Python/Shell)
+├── tools/              # Local utility scripts (agent/assets), not core runtime
 └── LICENSE             # Open-source license
 
 ```

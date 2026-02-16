@@ -4,7 +4,8 @@ import android.os.Build
 import com.actl.mvp.ActlApp
 import com.actl.mvp.api.framework.ApiDefinition
 import com.actl.mvp.api.framework.ApiResponse
-import com.actl.mvp.adb.session.AdbRuntime
+import com.actl.mvp.api.v1.system.info.worker.SystemInfoShellWorker
+import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
@@ -14,11 +15,25 @@ import kotlinx.serialization.Serializable
 class SystemInfoApi : ApiDefinition {
     override val name: String = "system_info"
 
-    private val adbManager = AdbRuntime.adbManager
+    private val systemInfoWorker by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+        SystemInfoShellWorker()
+    }
 
     override fun register(route: Route) {
         route.get(path) {
-            val display = resolveDisplayInfo()
+            val snapshot = systemInfoWorker.collectSnapshot()
+            if (!snapshot.success || snapshot.data == null) {
+                call.respond(
+                    status = HttpStatusCode.ServiceUnavailable,
+                    message = ApiResponse<Unit>(
+                        code = 50061,
+                        message = "system-info shell worker unavailable: ${snapshot.detail}"
+                    )
+                )
+                return@get
+            }
+
+            val display = resolveDisplayInfo(snapshot.data)
             val clickRange = ClickRange(
                 xMin = 0,
                 yMin = 0,
@@ -26,7 +41,6 @@ class SystemInfoApi : ApiDefinition {
                 yMax = if (display.heightPx > 0) display.heightPx - 1 else 0
             )
 
-            val adbProbe = adbManager.executeShell("echo ACTL_CONNECTED")
             val data = SystemInfoResult(
                 device = DeviceInfo(
                     manufacturer = Build.MANUFACTURER,
@@ -49,8 +63,8 @@ class SystemInfoApi : ApiDefinition {
                 display = display,
                 clickRange = clickRange,
                 adbSession = AdbSessionInfo(
-                    connected = adbProbe.success,
-                    detail = adbProbe.message.trim()
+                    connected = snapshot.data.connected,
+                    detail = snapshot.data.detail
                 ),
                 collectedAtMs = System.currentTimeMillis()
             )
@@ -58,16 +72,15 @@ class SystemInfoApi : ApiDefinition {
         }
     }
 
-    private fun resolveDisplayInfo(): DisplayInfo {
-        val wmSize = adbManager.executeShell("wm size")
-        if (wmSize.success) {
-            val parsed = parseWmSize(wmSize.message)
+    private fun resolveDisplayInfo(snapshot: SystemInfoShellWorker.Snapshot): DisplayInfo {
+        if (snapshot.wmSuccess) {
+            val parsed = parseWmSize(snapshot.wmRaw)
             if (parsed != null) {
                 return DisplayInfo(
                     widthPx = parsed.first,
                     heightPx = parsed.second,
                     source = "adb_wm_size",
-                    raw = wmSize.message.trim()
+                    raw = snapshot.wmRaw
                 )
             }
         }
@@ -77,7 +90,7 @@ class SystemInfoApi : ApiDefinition {
             widthPx = dm.widthPixels,
             heightPx = dm.heightPixels,
             source = "resources_display_metrics",
-            raw = wmSize.message.trim()
+            raw = snapshot.wmRaw
         )
     }
 

@@ -2,6 +2,7 @@ package com.actl.mvp.adb.session
 
 import android.content.Context
 import android.os.Build
+import androidx.core.content.edit
 import com.actl.mvp.adb.core.DirectAdbClient
 import com.actl.mvp.adb.core.DirectAdbInvalidPairingCodeException
 import com.actl.mvp.adb.core.DirectAdbKey
@@ -13,8 +14,10 @@ import java.util.concurrent.locks.ReentrantLock
 
 class DirectAdbManager(context: Context) {
 
+    private val preferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+
     private val keyStore = PreferenceDirectAdbKeyStore(
-        context.getSharedPreferences("direct_adb", Context.MODE_PRIVATE)
+        preferences
     )
 
     private val key by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
@@ -69,6 +72,7 @@ class DirectAdbManager(context: Context) {
             } else {
                 runCatching { client.close() }
             }
+            persistLastEndpoint(resolvedHost, port)
             val text = output.toString().trim().ifEmpty { "Connected" }
             val message = if (keepAlive) "$text (session kept alive)" else text
             AdbCommandResult(true, message)
@@ -218,6 +222,22 @@ class DirectAdbManager(context: Context) {
         }
     }
 
+    fun lastConnectedEndpoint(): Endpoint? {
+        val host = preferences.getString(KEY_LAST_HOST, null).orEmpty().trim()
+        val port = preferences.getInt(KEY_LAST_PORT, -1)
+        if (host.isEmpty() || port !in 1..65535) {
+            return null
+        }
+        return Endpoint(host = host, port = port)
+    }
+
+    private fun persistLastEndpoint(host: String, port: Int) {
+        preferences.edit {
+            putString(KEY_LAST_HOST, host)
+            putInt(KEY_LAST_PORT, port)
+        }
+    }
+
     private inline fun <T> withShellLock(onBusy: () -> T, block: () -> T): T {
         val locked = try {
             shellCommandLock.tryLock(SHELL_LOCK_WAIT_MS, TimeUnit.MILLISECONDS)
@@ -236,6 +256,9 @@ class DirectAdbManager(context: Context) {
     }
 
     companion object {
+        private const val PREF_NAME = "direct_adb"
+        private const val KEY_LAST_HOST = "last_connect_host"
+        private const val KEY_LAST_PORT = "last_connect_port"
         private const val LOOPBACK = "127.0.0.1"
         private const val SHELL_LOCK_WAIT_MS = 300L
         private val activeClientLock = Any()
@@ -244,4 +267,9 @@ class DirectAdbManager(context: Context) {
         @Volatile
         private var sharedActiveClient: DirectAdbClient? = null
     }
+
+    data class Endpoint(
+        val host: String,
+        val port: Int
+    )
 }

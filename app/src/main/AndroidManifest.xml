@@ -57,6 +57,15 @@
             android:name=".startup.service.PairingForegroundService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
+
+        <receiver
+            android:name=".api.framework.worker.ShellWorkerBinderReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.actl.mvp.action.SHELL_WORKER_BINDER" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>
